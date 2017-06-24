@@ -5,7 +5,6 @@
 import argparse
 from HumanPlayer import HumanPlayer
 from MctsPlayer import MctsPlayer
-import logging
 import logging.config
 
 logging.config.fileConfig('Logging.conf')
