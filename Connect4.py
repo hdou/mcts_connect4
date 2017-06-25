@@ -7,7 +7,7 @@ from HumanPlayer import HumanPlayer
 from MctsPlayer import MctsPlayer
 import logging.config
 import copy
-from TextPresentor import TextPresenter
+from TextPresenter import TextPresenter
 
 logging.config.fileConfig('Logging.conf')
 logger = logging.getLogger('connect4.game')
