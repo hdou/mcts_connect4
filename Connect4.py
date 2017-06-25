@@ -73,6 +73,9 @@ class Connect4(object):
             self.presenter = TextPresenter()
         else:
             self.presenter = presenter
+        
+        # remember the last move
+        self.lastMove = None
             
     def RowSize(self):
         return self.size[0]
@@ -103,7 +106,7 @@ class Connect4(object):
                     break
                 except Exception:
                     print 'Invalid move {}'.format(move)
-                
+                            
     def GetPlayerFromId(self, playerId):
         if not self.IsValidPlayer(playerId):
             raise Exception('Invalid player ID: {}'.format(playerId))
@@ -134,6 +137,7 @@ class Connect4(object):
         col.append(player)
         logger.debug("Board: {}".format(self.board))
         
+        self.lastMove = column
         self.current_player = self.GetNextPlayer()        
     
     def IsValidMove(self, column):
@@ -145,7 +149,19 @@ class Connect4(object):
             return False
         col = self.GetColumn(column)
         return len(col) < self.RowSize()
-
+    
+    def GetLastMove(self):
+        '''
+        If there are moves, return the last move in (row,column)
+        '''
+        if self.lastMove is not None:
+            col = self.GetColumn(self.lastMove)
+            for i in reversed(xrange(len(col))):
+                if self.IsValidPlayer(col[i]):
+                    return (i, self.lastMove)
+        return None
+                
+            
     def GetValue(self, row, col):
         '''
         Return value at location (row, col). If a player has taken it, returns the ID of the player;

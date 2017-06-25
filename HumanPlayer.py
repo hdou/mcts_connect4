@@ -20,7 +20,11 @@ class HumanPlayer(Player):
         return '{} - Human'.format(self.GetID())
 
     def GetMove(self, game, validMoves):
-        col = eval(raw_input('Make a move (by entering the column number):'))
-        return col
+        while True:
+            try:
+                col = eval(raw_input('{} Make a move (by entering the column number):'.format(self)))
+                return col
+            except Exception:
+                pass
 
         

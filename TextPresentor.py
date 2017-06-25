@@ -9,22 +9,23 @@ class TextPresenter(Presenter):
         rowSize = game.RowSize()
         
         # first line
-        print '   ',
+        print ' ',
         for i in xrange(colSize):
-            print i,
-            if i < (colSize-1):
-                print ' ',
-        print '\n'
+            print ' ', i,
+        print
+        
+        lastMove = game.GetLastMove()
         
         for i in reversed(xrange(rowSize)):
-            print i, ' ',
+            print i,
             row = game.GetRow(i)
             for j in xrange(len(row)):
                 s = self._GetSymbol(row[j])
-                print s,
-                if j<(len(row)-1):
-                    print ' ',
-            print '\n'
+                if lastMove is not None and (i, j) == lastMove:
+                    print '>',s,
+                else:
+                    print ' ', s,
+            print
     
     def _GetSymbol(self, playerId):
         if playerId == 1:

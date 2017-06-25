@@ -269,6 +269,16 @@ class Test_Connect4_GetValidMoves(unittest.TestCase):
         ms = game.GetValidMoves()
         self.assertEqual([], ms)
 
+class Test_Connect4_GetLastMove(unittest.TestCase):
+    def test_GetLastMove(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        game = Connect4(p1, p2)
+        self.assertEqual(None, game.GetLastMove())
+        game.Move(1, 2)
+        self.assertEqual((0,2), game.GetLastMove())
+        
+        
 if __name__ == '__main__':
     unittest.main()
     
