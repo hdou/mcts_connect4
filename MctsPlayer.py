@@ -11,8 +11,9 @@ class MctsPlayer(Player):
     '''
     MctsPlayer: defines a player using Monte Carlo Tree Search
     '''
-    def __init__(self):
-        logger.debug('Mcts player instantiated')
+    def __init__(self, id):
+        super(MctsPlayer,self).__init__(id)
+        logger.debug('Player {}: Mcts player instantiated'.format(id))
     
     def __str__(self):
-        return "Mcts"
+        return '{} - Mcts'.format(self.GetID())
