@@ -13,9 +13,9 @@ class Test_Connect4_Validations(unittest.TestCase):
     
     def test_IsValidPlayer(self):
         player = self.game.GetCurrentPlayer()
-        self.assertTrue(self.game.IsValidPlayer(player))
+        self.assertTrue(self.game.IsCurrentPlayer(player))
         next_player = player % 2 + 1
-        self.assertFalse(self.game.IsValidPlayer(next_player))
+        self.assertFalse(self.game.IsCurrentPlayer(next_player))
             
     def test_IsValidMove(self):
         self.assertEqual(False, self.game.IsValidMove(-1))
@@ -155,17 +155,119 @@ class Test_Connect4_Algorithm(unittest.TestCase):
         self.assertEqual([' ',' '], adiag)
         adiag = self.game.GetAntiDiag(6)
         self.assertEqual([' '], adiag)
-    def test_GetWinner(self):
+    def test_GetWinnerInLine(self):
         v = [1]
-        self.assertEqual(None, self.game.GetWinner(v))
+        self.assertEqual(None, self.game.GetWinnerInLine(v))
         v = [2,1,1,1,2]
-        self.assertEqual(None, self.game.GetWinner(v))
+        self.assertEqual(None, self.game.GetWinnerInLine(v))
         v = [' ',' ',' ',' ',1]
-        self.assertEqual(None, self.game.GetWinner(v))
+        self.assertEqual(None, self.game.GetWinnerInLine(v))
         v = [' ',' ',2,2,2,2]
-        self.assertEqual(2, self.game.GetWinner(v))
+        self.assertEqual(2, self.game.GetWinnerInLine(v))
         v = [' ',1,1,1,1,2,' ']
-        self.assertEqual(1, self.game.GetWinner(v))
+        self.assertEqual(1, self.game.GetWinnerInLine(v))
+
+class Test_Connect4_GetWinner(unittest.TestCase):
+    def test_GetWinner_None_1(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[], [2,1], [1,2,1], [2,2,1], [], [], []]
+        #       
+        #      
+        #     
+        #     1 1       
+        #   1 2 2       
+        #   2 1 2       
+        game = Connect4(p1, p2, board)
+        w = game.GetWinner()
+        self.assertEqual(None, w)        
+    def test_GetWinner_None_2(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[], [2,1,2,1], [1,2,2,2,1], [2,1,2,1,2,1], [], [], [1,1,2]]
+        #       1
+        #     1 2
+        #   1 2 1
+        #   2 2 2       2
+        #   1 2 1       1
+        #   2 1 2       1
+        game = Connect4(p1, p2, board)
+        w = game.GetWinner()
+        self.assertEqual(None, w)        
+    def test_GetWinner_Column(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[], [2,1,2,1], [1,2,2,2,2], [2,1,2,1,2,1], [], [], [1,1,2]]
+        #       1
+        #     2 2
+        #   1 2 1
+        #   2 2 2       2
+        #   1 2 1       1
+        #   2 1 2       1
+        game = Connect4(p1, p2, board)
+        w = game.GetWinner()
+        self.assertEqual(2, w)
+    def test_GetWinner_Row(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[], [2,1,2,1], [1,2,2,2,1], [2,1,2,1,2,1], [1,1,2], [], [2]]
+        #       1
+        #     1 2
+        #   1 2 1
+        #   2 2 2 2    
+        #   1 2 1 1
+        #   2 1 2 1    2
+        game = Connect4(p1, p2, board)
+        w = game.GetWinner()
+        self.assertEqual(2, w)
+    def test_GetWinner_Diag(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[], [2,1,2,1], [1,2,2,2,1], [2,1,2,1,2,1], [1,1,1,2], [], [2]]
+        #       1
+        #     1 2
+        #   1 2 1 2
+        #   2 2 2 1    
+        #   1 2 1 1
+        #   2 1 2 1    2
+        game = Connect4(p1, p2, board)
+        w = game.GetWinner()
+        self.assertEqual(2, w)
+    def test_GetWinner_AntiDiag(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[], [2,1,2,1], [1,2,2,2,1], [2,1,2,1,2,1], [1,1,1], [2,1], [2]]
+        #       1
+        #     1 2
+        #   1 2 1
+        #   2 2 2 1    
+        #   1 2 1 1 1
+        #   2 1 2 1 2 2
+        game = Connect4(p1, p2, board)
+        w = game.GetWinner()
+        self.assertEqual(1, w)
+
+class Test_Connect4_GetValidMoves(unittest.TestCase):
+    def test_GetValidMoves_1(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[1,2,2,1,2,1], [2,1,2,1], [1,2,2,2,1], [2,1,2,1,2,1], [1,1,1], [2,1], [2]]
+        # 1     1
+        # 2   1 2
+        # 1 1 2 1
+        # 2 2 2 2 1    
+        # 2 1 2 1 1 1
+        # 1 2 1 2 1 2 2
+        game = Connect4(p1, p2, board)
+        ms = game.GetValidMoves()
+        self.assertEqual([1,2,4,5,6], ms)
+    def test_GetValidMoves_2(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[1,2,2,1,2,1], [1,2,2,1,2,1], [1,2,2,1,2,1], [1,2,2,1,2,1], [1,2,2,1,2,1], [1,2,2,1,2,1], [1,2,2,1,2,1]]
+        game = Connect4(p1, p2, board)
+        ms = game.GetValidMoves()
+        self.assertEqual([], ms)
 
 if __name__ == '__main__':
     unittest.main()

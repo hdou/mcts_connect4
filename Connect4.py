@@ -7,6 +7,7 @@ from HumanPlayer import HumanPlayer
 from MctsPlayer import MctsPlayer
 import logging.config
 import copy
+from TextPresentor import TextPresenter
 
 logging.config.fileConfig('Logging.conf')
 logger = logging.getLogger('connect4.game')
@@ -48,7 +49,7 @@ class Connect4(object):
     have character space, or ' '.
     GetDiag(index) and GetAntiDiag(index) are similar to GetRow.
     '''
-    def __init__(self, p1, p2, board=None, current_player=1):
+    def __init__(self, p1, p2, board=None, current_player=1, presenter=None):
         self.p1 = p1
         self.p2 = p2
         
@@ -66,13 +67,58 @@ class Connect4(object):
         
         # player 1 expects to make a move
         self.current_player = current_player
-    
+        
+        # Default to a text presenter
+        if presenter is None:
+            self.presenter = TextPresenter()
+        else:
+            self.presenter = presenter
+            
     def RowSize(self):
         return self.size[0]
     def ColumnSize(self):
         return self.size[1]
     def DiagRange(self):
         return xrange(-self.RowSize()+1, self.ColumnSize())
+    
+    def Play(self):
+        while True:
+            if self.presenter is not None:
+                self.presenter.Present(self)
+                
+            winner = self.GetWinner()
+            if winner is not None:
+                player = self.GetPlayerFromId(winner)
+                print "Game over. {} wins".format(player)
+                return
+            if not self.HasSpaceToMove():
+                print "Game over. It's a tie"
+                return
+            player = self.GetPlayerFromId(self.current_player)
+        
+            while True:
+                move = player.GetMove(self, self.GetValidMoves())
+                try:
+                    self.Move(self.current_player, move)
+                    break
+                except Exception:
+                    print 'Invalid move {}'.format(move)
+                
+    def GetPlayerFromId(self, playerId):
+        if not self.IsValidPlayer(playerId):
+            raise Exception('Invalid player ID: {}'.format(playerId))
+        if playerId == 1:
+            return self.p1
+        return self.p2
+    
+    def GetValidMoves(self):
+        validMoves = []
+        for i in xrange(self.ColumnSize()):
+            col = self.GetColumn(i)
+            if len(col) < self.RowSize():
+                validMoves.append(i)
+        return validMoves
+
     def Move(self, player, column):
         '''
         Move: player makes a move
@@ -80,7 +126,7 @@ class Connect4(object):
         '''
         logger.info('Move: Player %s, Column %s', player, column)
         logger.debug('Board: %s', self.board)
-        if not self.IsValidPlayer(player):
+        if not self.IsCurrentPlayer(player):
             raise Exception ('Not player', player, '\'s turn')
         if not self.IsValidMove(column):
             raise Exception ('Invalid move', column, self.board)
@@ -151,7 +197,6 @@ class Connect4(object):
         return diag
     
     def GetAntiDiag(self,index):
-        print self.DiagRange()
         if index not in self.DiagRange():
             raise Exception('Invalid antidiagonal {}. Expect {}'.format(index, self.DiagRange()))
 #     AntiDiag[-M] = [(r0, c0)]
@@ -177,8 +222,11 @@ class Connect4(object):
             c = c + 1
         return adiag
         
-    def IsValidPlayer(self, player):
+    def IsCurrentPlayer(self, player):
         return player == self.current_player
+    
+    def IsValidPlayer(self, player):
+        return player == 1 or player == 2
     
     def GetCurrentPlayer(self):
         return self.current_player;
@@ -200,7 +248,7 @@ class Connect4(object):
     def GetNConscecutivesToWin(self):
         return 4
         
-    def GetWinner(self, valueList):
+    def GetWinnerInLine(self, valueList):
         '''
         Check whether the list of values indicate a winner (4 conscecutive values).
         If so, returns it (if both players have 4 conscecutives, the first one detected is considered 
@@ -235,8 +283,39 @@ class Connect4(object):
 
         return winner
         
+    def GetWinner(self):
+        '''
+        Get the winner of the game, if there is one, otherwise None.
+        '''
+        for i in xrange(self.ColumnSize()):
+            line = self.GetColumn(i)
+            winner = self.GetWinnerInLine(line)
+            if winner is not None:
+                return winner
+        for i in xrange(self.RowSize()):
+            line = self.GetRow(i)
+            winner = self.GetWinnerInLine(line)
+            if winner is not None:
+                return winner
+        for i in self.DiagRange():
+            line = self.GetDiag(i)
+            winner = self.GetWinnerInLine(line)
+            if winner is not None:
+                return winner
+        for i in self.DiagRange():  # same range as diagonal lines
+            line = self.GetAntiDiag(i)
+            winner = self.GetWinnerInLine(line)
+            if winner is not None:
+                return winner
     
-def MakePlayer(player, id):
+    def HasSpaceToMove(self):
+        for i in xrange(self.ColumnSize()):
+            col = self.GetColumn(i)
+            if len(col) < self.RowSize():
+                return True
+        return False    
+                
+def MakePlayer(player, playerId):
     '''
     Instantiate a Player based on the input string:
     h or human: HumanPlayer
@@ -244,9 +323,9 @@ def MakePlayer(player, id):
     Raise exception otherwise
     '''
     if player == 'h' or player == 'human':
-        return HumanPlayer(id)
+        return HumanPlayer(playerId)
     elif player == 'm' or player == 'mcts':
-        return MctsPlayer(id)
+        return MctsPlayer(playerId)
     raise Exception("Unknown Player type", player)
     
 
@@ -272,4 +351,6 @@ if __name__ == '__main__':
     player2 = MakePlayer(args.p2, 2)
     
     game = Connect4(player1, player2)
+    
+    game.Play()
     

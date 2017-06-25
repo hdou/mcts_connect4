@@ -11,3 +11,6 @@ class Player(object):
     def GetID(self):
         return self.id
     
+    def GetMove(self, game, validMove):
+        raise NotImplemented('Concrete class must implement this method')
+    

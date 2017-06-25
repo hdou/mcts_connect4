@@ -3,6 +3,7 @@
 from Player import Player
 
 import logging.config
+from pyparsing import col
 
 logging.config.fileConfig('Logging.conf')
 logger = logging.getLogger('connect4.player.HumanPlayer')
@@ -17,3 +18,9 @@ class HumanPlayer(Player):
     
     def __str__(self):
         return '{} - Human'.format(self.GetID())
+
+    def GetMove(self, game, validMoves):
+        col = eval(raw_input('Make a move (by entering the column number):'))
+        return col
+
+        
