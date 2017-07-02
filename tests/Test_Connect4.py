@@ -278,7 +278,19 @@ class Test_Connect4_GetLastMove(unittest.TestCase):
         game.Move(1, 2)
         self.assertEqual((0,2), game.GetLastMove())
         
-        
+class Test_Connect4_GetNextState(unittest.TestCase):
+    def test_GetNextState(self):
+        p1 = HumanPlayer(1)
+        p2 = HumanPlayer(2)
+        board = [[1,2,2,1,2,1], [2,1,2,1], [1,2,2,2,1], [2,1,2,1,2,1], [1,1,1], [2,1], [2]]
+        game = Connect4(p1, p2, board)
+        state = game.GetNextState(player=1, column=2)
+        expectedState = ((1,2,2,1,2,1), (2,1,2,1), (1,2,2,2,1,1), (2,1,2,1,2,1), (1,1,1), (2,1), (2,))
+        self.assertEqual(expectedState, state)
+        # Make sure the original game hasn't been changed
+        self.assertEqual(board, game.board)
+        self.assertEqual(1, game.GetCurrentPlayer())
+            
 if __name__ == '__main__':
     unittest.main()
     

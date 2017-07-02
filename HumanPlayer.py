@@ -12,9 +12,9 @@ class HumanPlayer(Player):
     '''
     HumanPlayer: defines a human player
     '''
-    def __init__(self, id):
-        super(HumanPlayer,self).__init__(id)
-        logger.debug('Player {}: Human player instantiated'.format(id))
+    def __init__(self, playerId):
+        super(HumanPlayer,self).__init__(playerId)
+        logger.debug('Player {}: Human player instantiated'.format(playerId))
     
     def __str__(self):
         return '{} - Human'.format(self.GetID())

@@ -115,6 +115,10 @@ class Connect4(object):
         return self.p2
     
     def GetValidMoves(self):
+        '''
+        Return a list of valid moves. If there is no more valid move,
+        returns empty list 
+        '''
         validMoves = []
         for i in xrange(self.ColumnSize()):
             col = self.GetColumn(i)
@@ -127,7 +131,7 @@ class Connect4(object):
         Move: player makes a move
         player (1 or 2) puts a piece in column (0 to 6 inclusive)
         '''
-        logger.info('Move: Player %s, Column %s', player, column)
+        logger.debug('Move: Player %s, Column %s', player, column)
         logger.debug('Board: %s', self.board)
         if not self.IsCurrentPlayer(player):
             raise Exception ('Not player', player, '\'s turn')
@@ -140,6 +144,19 @@ class Connect4(object):
         self.lastMove = column
         self.current_player = self.GetNextPlayer()        
     
+    def GetNextState(self, player, column):
+        '''
+        Returns the board state as tuple of tuples (list is not hashable) if player makes the move
+        This method makes a copy of the board, and won't touch the original one
+        '''
+        if not self.IsValidMove(column):
+            raise Exception ('Invalid move', column, self.board)
+        board_copy = copy.deepcopy(self.board)
+        col = self._GetColumnImpl(board_copy, column)
+        col.append(player)
+        state = tuple(tuple(col) for col in board_copy)
+        return state
+        
     def IsValidMove(self, column):
         '''
         IsValidMove: check whether the move is valid (column is 0-based)
@@ -173,10 +190,13 @@ class Connect4(object):
         return ' '
             
     def GetColumn(self, index):
+        return self._GetColumnImpl(self.board, index)
+    
+    def _GetColumnImpl(self, board, index):
         if index >= self.ColumnSize() or index < 0:
             raise Exception('Invalid column', index)
-        return self.board[index]
-    
+        return board[index]
+        
     def GetRow(self, index):
         if index >= self.RowSize() or index < 0:
             raise Exception('Invalid row', index)

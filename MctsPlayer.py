@@ -1,8 +1,14 @@
 # MctsPlayer.py - Represents an AI player using Monte Carlo Tree Search
+from __future__ import division     # otherwise 5/2 = 2
 
 from Player import Player
 
 import logging.config
+import time
+from math import log
+from math import sqrt
+from random import choice
+import copy
 
 logging.config.fileConfig('Logging.conf')
 logger = logging.getLogger('connect4.player.MctsPlayer')
@@ -11,9 +17,132 @@ class MctsPlayer(Player):
     '''
     MctsPlayer: defines a player using Monte Carlo Tree Search
     '''
-    def __init__(self, id):
-        super(MctsPlayer,self).__init__(id)
-        logger.debug('Player {}: Mcts player instantiated'.format(id))
+    def __init__(self, playerId, **kwargs):
+        super(MctsPlayer,self).__init__(playerId)
+        logger.debug('Player {}: Mcts player instantiated'.format(playerId))
+        
+        # parameters
+        self.simTime = kwargs.get('time', 30)       # simulation time, in seconds
+        self.simDepth = kwargs.get('depth', 100)    # maximum depth to simulate
+        
+        # Dictionaries from (player, board_state) to winning count and visited count respectively, where
+        # player: the id of the player whose move results in the board state
+        # board_state: the state of the board
+        # wins: the number of times the player wins when enter into this state
+        # totals: the number of times the (player, board_state) has been simulated 
+        self.wins = {}
+        self.totals = {}
+        
+        self.depth = 0
     
     def __str__(self):
         return '{} - Mcts'.format(self.GetID())
+    
+    def GetMove(self, game, validMoves):
+        '''
+        Returns the move computed with MCTS algorithm
+        '''
+        if validMoves is None or len(validMoves) == 0:
+            return
+        
+        if len(validMoves) == 1:
+            return validMoves[0]
+        
+        simulationCount = 0
+        beginTime = time.time()
+        currTime = time.time()
+        logTime = 0
+        timeLeft = self.simTime
+        while currTime - beginTime < self.simTime:
+            # Make a copy of the game
+            copiedGame = copy.deepcopy(game)          
+            self.Simulate(copiedGame)
+            simulationCount += 1
+            currTime = time.time()
+            if logTime == 0 or currTime - logTime >= 1:
+                timeLeft = self.simTime - int(round(currTime - beginTime))
+                print 'Time left: ', timeLeft, 's'
+                logTime = currTime
+        
+        logging.info('{} simulated {} times in {} seconds'.format(self, simulationCount, self.simTime))
+        
+        myId = self.GetID()
+        movesStates = [(move, game.GetNextState(myId, move)) for move in validMoves]
+        
+        # Pick the move with the highest winning percentage
+        winPercent, move = max((self.wins.get((myId, state), 0)/self.totals.get((myId,state), 1), mv) for mv, state in movesStates)
+        print 'Best move {} ({})'.format(move, winPercent*100)
+        
+        # Print out the winning percentages
+        for x in sorted((
+            self.wins.get((myId, state), 0)/self.totals.get((myId, state), 1),
+            self.wins.get((myId, state), 0),
+            self.totals.get((myId, state), 0),
+            mv) for mv, state in movesStates):
+            #print '{3} : {0.2f}% ({1}/{2}'.format(*x)
+            print '{3} : {0} ({1}/{2})'.format(*x)
+    
+        print 'Max depth = ', self.depth
+        
+        return move
+    
+    
+    def Simulate(self, game, randomFunc=choice):
+        '''
+        Simulate the game
+        If randomFunc is provided, it will be called with randomFunc(validMoves) when random moves are desired
+        '''
+        depth = 0
+        winner = game.GetWinner()
+        playerId = game.GetCurrentPlayer()
+        validMoves = game.GetValidMoves()
+        
+        visitedPlayersStates = set()
+        expandTree = True
+        
+        while winner is None and len(validMoves)>0 and depth < self.simDepth:
+            movesStates = [(move, game.GetNextState(playerId, move)) for move in validMoves]
+            
+            if all(self.totals.get((playerId, state)) for _, state in movesStates):
+                # all child nodes have statistics, use UCT
+                N = sum(self.totals.get((playerId, state)) for _, state in movesStates)
+                moveScore = max((self.wins.get((playerId, state))/self.totals.get((playerId, state)) + sqrt(2*log(N)/self.totals.get((playerId, state))), move)
+                               for move, state in movesStates)
+                move = moveScore[1]
+            else:
+                move = randomFunc(validMoves)
+            
+            game.Move(playerId, move)
+            
+            # Add the (player, state) into visited nodes
+            moveState = [item for item in movesStates if item[0]==move]    # find the state corresponding to the move 
+            if len(moveState) != 1:
+                raise Exception('Duplicated move {} {} times: {}'.format(move, len(moveState), validMoves))
+            # first index [0]: first (the only) element
+            # second index [1]: the state
+            state = moveState[0][1] 
+            visitedPlayersStates.add((playerId, state))
+            
+            # Add the (player, state) into the statistics if expandTree is false.
+            # Only add the first new node
+            if expandTree:
+                if (playerId, state) not in self.totals:
+                    expandTree = False
+                    self.totals[(playerId, state)] = 0
+                    self.wins[(playerId, state)] = 0
+
+            playerId = game.GetCurrentPlayer()
+            winner = game.GetWinner()
+            validMoves = game.GetValidMoves()
+            depth += 1
+        
+        if winner is not None:
+            for (p, s) in visitedPlayersStates:
+                if (p, s) in self.totals:
+                    self.totals[(p, s)] += 1
+                    if p == winner:
+                        self.wins[(p,s)] += 1
+                        
+        if depth >= self.depth:
+            self.depth = depth
+                    
