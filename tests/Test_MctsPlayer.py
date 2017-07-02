@@ -25,6 +25,9 @@ class TestGame1(object):
         self.winning_table = {'s1':None, 's2':1, 's3':2, 's4':1}
         self.state_transitions = {('s1', 'm1'):'s2', ('s1', 'm2'):'s3', ('s1', 'm3'):'s4'}
     
+    def Copy(self):
+        return copy.deepcopy(self)
+    
     def GetCurrentPlayer(self):
         return self.current_player
     

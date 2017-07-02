@@ -61,7 +61,8 @@ class MctsPlayer(Player):
         nextFivesMark = int(ceil((self.simTime - 5)/5)*5)
         while currTime - beginTime < self.simTime:
             # Make a copy of the game
-            copiedGame = copy.deepcopy(game)          
+            #copiedGame = copy.deepcopy(game)
+            copiedGame = game.Copy()
             self.Simulate(copiedGame)
             simulationCount += 1
             if currTime - logTime >= 1:

@@ -57,7 +57,7 @@ class Connect4(object):
         
         # size of the board
         self.size = [6,7]   # 6 rows, 7 columns
-        print('New game - players: {}, {}'.format(p1, p2))
+        #print('New game - players: {}, {}'.format(p1, p2))
         
         if board is None:
             # initialize the board [[],[],...[]], each element list represents a column
@@ -78,7 +78,17 @@ class Connect4(object):
         
         # remember the last move
         self.lastMove = None
-            
+    
+    def Copy(self):
+        '''
+        Make a copy of itself.
+        '''
+        newGame = Connect4(self.p1, self.p2, current_player=self.current_player, presenter=self.presenter)
+        for i in xrange(len(self.board)):
+            newGame.board[i] = self.board[i][:]     # make a copy
+        newGame.lastMove = self.lastMove
+        return newGame
+        
     def RowSize(self):
         return self.size[0]
     def ColumnSize(self):
@@ -162,11 +172,18 @@ class Connect4(object):
         '''
         if not self.IsValidMove(column):
             raise Exception ('Invalid move', column, self.board)
-        board_copy = copy.deepcopy(self.board)
-        col = self._GetColumnImpl(board_copy, column)
-        col.append(player)
-        state = tuple(tuple(col) for col in board_copy)
-        return state
+
+        stateList = []        
+        for i in xrange(len(self.board)):
+            if i == column:
+                currCol = self.GetColumn(i)
+                col = currCol[:]
+                col.append(player)
+            else:
+                col = self.GetColumn(i)
+            stateList.append(tuple(col))
+        states = tuple(stateList)
+        return states
         
     def IsValidMove(self, column):
         '''
