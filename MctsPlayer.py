@@ -7,8 +7,10 @@ import logging.config
 import time
 from math import log
 from math import sqrt
+from math import ceil
 from random import choice
 import copy
+import sys
 
 logging.config.fileConfig('Logging.conf')
 logger = logging.getLogger('connect4.player.MctsPlayer')
@@ -32,6 +34,8 @@ class MctsPlayer(Player):
         # totals: the number of times the (player, board_state) has been simulated 
         self.wins = {}
         self.totals = {}
+        self.loses = {}
+        self.draws = {}
         
         self.depth = 0
     
@@ -51,19 +55,26 @@ class MctsPlayer(Player):
         simulationCount = 0
         beginTime = time.time()
         currTime = time.time()
-        logTime = 0
-        timeLeft = self.simTime
+        logTime = currTime
+        sys.stdout.write('{} move - time left ({})'.format(self, self.simTime))
+        sys.stdout.flush()
+        nextFivesMark = int(ceil((self.simTime - 5)/5)*5)
         while currTime - beginTime < self.simTime:
             # Make a copy of the game
             copiedGame = copy.deepcopy(game)          
             self.Simulate(copiedGame)
             simulationCount += 1
-            currTime = time.time()
-            if logTime == 0 or currTime - logTime >= 1:
-                timeLeft = self.simTime - int(round(currTime - beginTime))
-                #print 'Time left: {}s. Stored {} states'.format(timeLeft, len(self.totals))
-                print 'Time left: {}s'.format(timeLeft)
+            if currTime - logTime >= 1:
+                timeLeft = self.simTime - (currTime - beginTime)
+                if timeLeft <= nextFivesMark:
+                    sys.stdout.write('({})'.format(str(nextFivesMark)))
+                    nextFivesMark -= 5
+                else:
+                    sys.stdout.write('.')
+                sys.stdout.flush()
                 logTime = currTime
+            currTime = time.time()
+        print
                 
         
         logging.info('{} simulated {} times in {} seconds'.format(self, simulationCount, self.simTime))
@@ -79,8 +90,13 @@ class MctsPlayer(Player):
             100 * self.wins.get((myId, state), 0)/self.totals.get((myId, state), 1),
             self.wins.get((myId, state), 0),
             self.totals.get((myId, state), 0),
-            mv) for mv, state in movesStates), reverse=True):
-            print '{3} : {0:.2f}% ({1}/{2})'.format(*x)
+            mv,
+            100 * self.draws.get((myId, state), 0)/self.totals.get((myId, state), 1),
+            self.draws.get((myId, state), 0),
+            100 * self.loses.get((myId, state), 0)/self.totals.get((myId, state), 1),
+            self.loses.get((myId, state), 0)            
+            ) for mv, state in movesStates), reverse=True):
+            print '{3} : w: {0:.1f}% ({1}/{2}), d: {4:.1f}% ({5}/{2}), l: {6:.1f}% ({7}/{2})'.format(*x)
     
         print 'Max depth = ', self.depth
         
@@ -98,6 +114,8 @@ class MctsPlayer(Player):
         '''
         totals = self.totals
         wins = self.wins
+        loses = self.loses
+        draws = self.draws
         
         depth = 0
         winner = game.GetWinner()
@@ -137,18 +155,24 @@ class MctsPlayer(Player):
                     expandTree = False
                     totals[(playerId, state)] = 0
                     wins[(playerId, state)] = 0
+                    draws[(playerId, state)] = 0
+                    loses[(playerId, state)] = 0
 
             playerId = game.GetCurrentPlayer()
             winner = game.GetWinner()
             validMoves = game.GetValidMoves()
             depth += 1
         
-        if winner is not None:
-            for (p, s) in visitedPlayersStates:
-                if (p, s) in totals:
-                    totals[(p, s)] += 1
-                    if p == winner:
-                        wins[(p,s)] += 1
+        for (p, s) in visitedPlayersStates:
+            if (p, s) in totals:
+                totals[(p, s)] += 1
+                if winner is None:
+                    draws[(p,s)] += 1
+                elif p == winner:
+                    wins[(p,s)] += 1
+                else:
+                    loses[(p,s)] += 1
+                        
                         
         if depth >= self.depth:
             self.depth = depth
