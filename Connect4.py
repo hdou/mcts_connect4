@@ -8,6 +8,8 @@ from MctsPlayer import MctsPlayer
 import logging.config
 import copy
 from TextPresenter import TextPresenter
+import datetime
+import time
 
 logging.config.fileConfig('Logging.conf')
 logger = logging.getLogger('connect4.game')
@@ -85,6 +87,9 @@ class Connect4(object):
         return xrange(-self.RowSize()+1, self.ColumnSize())
     
     def Play(self):
+        moveCount = 0
+        beginTime = time.time()
+        
         while True:
             if self.presenter is not None:
                 self.presenter.Present(self)
@@ -93,9 +98,13 @@ class Connect4(object):
             if winner is not None:
                 player = self.GetPlayerFromId(winner)
                 print "Game over. {} wins".format(player)
+                endTime = time.time()
+                self.LogGame(winner, moveCount, endTime-beginTime)
                 return
             if not self.HasSpaceToMove():
                 print "Game over. It's a tie"
+                endTime = time.time()
+                self.LogGame(None, moveCount, endTime-beginTime)
                 return
             player = self.GetPlayerFromId(self.current_player)
         
@@ -106,6 +115,8 @@ class Connect4(object):
                     break
                 except Exception:
                     print 'Invalid move {}'.format(move)
+            
+            moveCount += 1
                             
     def GetPlayerFromId(self, playerId):
         if not self.IsValidPlayer(playerId):
@@ -351,7 +362,29 @@ class Connect4(object):
                 return True
         return False    
                 
-def MakePlayer(player, playerId):
+    def LogGame(self, winnerId, moves, timeElapsed):
+        with open('Connect4.log', 'a+') as f:
+            f.write('{}\n'.format(datetime.datetime.now()))
+            if winnerId is not None:
+                if winnerId == 1:
+                    winner = self.p1
+                    loser = self.p2
+                    loserId = 2
+                else:
+                    winner = self.p2
+                    loser = self.p1
+                    loserId = 1
+                f.write('Win: Player {}: {}\n'.format(winnerId, winner))
+                f.write('Lose: Player {}: {}\n'.format(loserId, loser))
+            else:
+                f.write('Tie\n')
+                f.write('Player 1: {}\n'.format(self.p1))
+                f.write('Player 2: {}\n'.format(self.p2))
+            f.write('Duration: {:.2f} seconds. Move count: {}\n\n'.format(timeElapsed, moves))
+                    
+            
+    
+def MakePlayer(player, timeAllowed, playerId):
     '''
     Instantiate a Player based on the input string:
     h or human: HumanPlayer
@@ -361,7 +394,7 @@ def MakePlayer(player, playerId):
     if player == 'h' or player == 'human':
         return HumanPlayer(playerId)
     elif player == 'm' or player == 'mcts':
-        return MctsPlayer(playerId)
+        return MctsPlayer(playerId, time=timeAllowed)
     raise Exception("Unknown Player type", player)
     
 
@@ -378,13 +411,17 @@ if __name__ == '__main__':
                         help = 'Specify Player 1. h=human or m=mcts (default=%(default)s)')
     parser.add_argument('--p2', '--player2', choices=['m', 'mcts', 'h', 'human'], default='mcts',
                         help = 'Specify Player 2. m=mcts or h=human (default=%(default)s)')
+    parser.add_argument('--p1time', type=int, default=30, 
+                        help = 'Time allowed in seconds if player 1 is mcts')
+    parser.add_argument('--p2time', type=int, default=30, 
+                        help = 'Time allowed in seconds if player 2 is mcts')
     
     
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 0.1')
     args = parser.parse_args()
     
-    player1 = MakePlayer(args.p1, 1)
-    player2 = MakePlayer(args.p2, 2)
+    player1 = MakePlayer(args.p1, args.p1time, 1)
+    player2 = MakePlayer(args.p2, args.p2time, 2)
     
     game = Connect4(player1, player2)
     

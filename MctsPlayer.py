@@ -40,7 +40,7 @@ class MctsPlayer(Player):
         self.depth = 0
     
     def __str__(self):
-        return '{} - Mcts'.format(self.GetID())
+        return '{} - Mcts({})'.format(self.GetID(), self.simTime)
     
     def GetMove(self, game, validMoves):
         '''
@@ -81,9 +81,15 @@ class MctsPlayer(Player):
         
         myId = self.GetID()
         movesStates = [(move, game.GetNextState(myId, move)) for move in validMoves]
-        
+
+                
         # Pick the move with the highest winning percentage
-        _, move = max((self.wins.get((myId, state), 0)/self.totals.get((myId,state), 1), mv) for mv, state in movesStates)
+        winPercentage, move = max((self.wins.get((myId, state), 0)/self.totals.get((myId,state), 1), mv) for mv, state in movesStates)
+        if winPercentage < 0.2:
+            winDrawPercentage, move2 = max(((self.wins.get((myId, state), 0)+self.draws.get((myId, state), 0))/self.totals.get((myId,state), 1), mv) for mv, state in movesStates)
+            if move2 != move:
+                move = move2
+                print 'Winning percentage too low. Use win+draw% - move {} - {:.1f}%'.format(move, winDrawPercentage*100)
         
         # Print out the winning percentages
         for x in sorted(((
@@ -96,7 +102,7 @@ class MctsPlayer(Player):
             100 * self.loses.get((myId, state), 0)/self.totals.get((myId, state), 1),
             self.loses.get((myId, state), 0)            
             ) for mv, state in movesStates), reverse=True):
-            print '{3} : w: {0:.1f}% ({1}/{2}), d: {4:.1f}% ({5}/{2}), l: {6:.1f}% ({7}/{2})'.format(*x)
+            print '{3} : w: {0:.1f}% ({1}/{2}), d: {4:.1f}% ({5}/{2}), l: {6:.1f}% ({7}/{2})'.format(*x)            
     
         print 'Max depth = ', self.depth
         

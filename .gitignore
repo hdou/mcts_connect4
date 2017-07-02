@@ -1,3 +1,5 @@
 *.pyc
 reference
+profile.output
+Connect4.log
 
