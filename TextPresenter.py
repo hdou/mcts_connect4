@@ -25,7 +25,7 @@ class TextPresenter(Presenter):
                     print '>',s,
                 else:
                     print ' ', s,
-            print
+            print '\n'
     
     def _GetSymbol(self, playerId):
         if playerId == 1:

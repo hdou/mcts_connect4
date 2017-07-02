@@ -61,8 +61,10 @@ class MctsPlayer(Player):
             currTime = time.time()
             if logTime == 0 or currTime - logTime >= 1:
                 timeLeft = self.simTime - int(round(currTime - beginTime))
-                print 'Time left: ', timeLeft, 's'
+                #print 'Time left: {}s. Stored {} states'.format(timeLeft, len(self.totals))
+                print 'Time left: {}s'.format(timeLeft)
                 logTime = currTime
+                
         
         logging.info('{} simulated {} times in {} seconds'.format(self, simulationCount, self.simTime))
         
@@ -70,19 +72,21 @@ class MctsPlayer(Player):
         movesStates = [(move, game.GetNextState(myId, move)) for move in validMoves]
         
         # Pick the move with the highest winning percentage
-        winPercent, move = max((self.wins.get((myId, state), 0)/self.totals.get((myId,state), 1), mv) for mv, state in movesStates)
-        print 'Best move {} ({})'.format(move, winPercent*100)
+        _, move = max((self.wins.get((myId, state), 0)/self.totals.get((myId,state), 1), mv) for mv, state in movesStates)
         
         # Print out the winning percentages
-        for x in sorted((
-            self.wins.get((myId, state), 0)/self.totals.get((myId, state), 1),
+        for x in sorted(((
+            100 * self.wins.get((myId, state), 0)/self.totals.get((myId, state), 1),
             self.wins.get((myId, state), 0),
             self.totals.get((myId, state), 0),
-            mv) for mv, state in movesStates):
-            #print '{3} : {0.2f}% ({1}/{2}'.format(*x)
-            print '{3} : {0} ({1}/{2})'.format(*x)
+            mv) for mv, state in movesStates), reverse=True):
+            print '{3} : {0:.2f}% ({1}/{2})'.format(*x)
     
         print 'Max depth = ', self.depth
+        
+        # clear stored states
+        self.totals = {}
+        self.wins = {}
         
         return move
     
@@ -92,6 +96,9 @@ class MctsPlayer(Player):
         Simulate the game
         If randomFunc is provided, it will be called with randomFunc(validMoves) when random moves are desired
         '''
+        totals = self.totals
+        wins = self.wins
+        
         depth = 0
         winner = game.GetWinner()
         playerId = game.GetCurrentPlayer()
@@ -103,10 +110,10 @@ class MctsPlayer(Player):
         while winner is None and len(validMoves)>0 and depth < self.simDepth:
             movesStates = [(move, game.GetNextState(playerId, move)) for move in validMoves]
             
-            if all(self.totals.get((playerId, state)) for _, state in movesStates):
+            if all(totals.get((playerId, state)) for _, state in movesStates):
                 # all child nodes have statistics, use UCT
-                N = sum(self.totals.get((playerId, state)) for _, state in movesStates)
-                moveScore = max((self.wins.get((playerId, state))/self.totals.get((playerId, state)) + sqrt(2*log(N)/self.totals.get((playerId, state))), move)
+                N = sum(totals.get((playerId, state)) for _, state in movesStates)
+                moveScore = max((wins.get((playerId, state))/totals.get((playerId, state)) + sqrt(2*log(N)/totals.get((playerId, state))), move)
                                for move, state in movesStates)
                 move = moveScore[1]
             else:
@@ -126,10 +133,10 @@ class MctsPlayer(Player):
             # Add the (player, state) into the statistics if expandTree is false.
             # Only add the first new node
             if expandTree:
-                if (playerId, state) not in self.totals:
+                if (playerId, state) not in totals:
                     expandTree = False
-                    self.totals[(playerId, state)] = 0
-                    self.wins[(playerId, state)] = 0
+                    totals[(playerId, state)] = 0
+                    wins[(playerId, state)] = 0
 
             playerId = game.GetCurrentPlayer()
             winner = game.GetWinner()
@@ -138,10 +145,10 @@ class MctsPlayer(Player):
         
         if winner is not None:
             for (p, s) in visitedPlayersStates:
-                if (p, s) in self.totals:
-                    self.totals[(p, s)] += 1
+                if (p, s) in totals:
+                    totals[(p, s)] += 1
                     if p == winner:
-                        self.wins[(p,s)] += 1
+                        wins[(p,s)] += 1
                         
         if depth >= self.depth:
             self.depth = depth
