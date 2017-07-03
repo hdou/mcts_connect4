@@ -9,12 +9,14 @@ Run ./Connect4.py --help for details <br/>
 # Unit test
 Run all tests: ./runtests <br/>
 Run individual tests: <br/>
-&nbsp;&nbsp;&nbsp;&nbsp;PYTHONPATH=\<code path>:\<codepath>/tests <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;PYTHONPATH=\<code path>:\<code path>/tests <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;export PYTHONPATH <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;python -m unittest \<TestClass>[.\<TestCase>] <br/>
 
 # Profile
-python -m cProfile -o \<outputfile> ./Connect4.py ...
+python -m cProfile -o \<outputfile> ./Connect4.py ...<br/>
+<br/>
+With the current code, it can run a few thousands simulations per 30 seconds on a MacBook Pro with 2.7 GHz Intel Core i7, and 16G RAM.
 
 # Change logging level
 Edit Logging.conf
