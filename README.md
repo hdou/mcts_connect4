@@ -1,5 +1,5 @@
 # mcts_connect4
-Experiment Monte Carlo tree search with a connect four game
+Experiment Monte Carlo tree search with the Connect Four game
 
 # Run it
 Example: first player: human; second player: MCTS player with 30 seconds per move <br/>
@@ -9,7 +9,7 @@ Run ./Connect4.py --help for details <br/>
 # Unit test
 Run all tests: ./runtests <br/>
 Run individual tests: <br/>
-&nbsp;&nbsp;&nbsp;&nbsp;PYTHONPATH=\<code path>:\<codepath>\\tests <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;PYTHONPATH=\<code path>:\<codepath>/tests <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;export PYTHONPATH <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;python -m unittest \<TestClass>[.\<TestCase>] <br/>
 
